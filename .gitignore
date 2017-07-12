@@ -1,0 +1,8 @@
+﻿################################################################################
+# Diese .gitignore-Datei wurde von Microsoft(R) Visual Studio automatisch erstellt.
+################################################################################
+
+/Yais/.vs/Yais/v14/.suo
+/Yais/bin/Debug
+/Yais/obj/Debug
+/Yais/packages

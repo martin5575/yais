@@ -1,0 +1,18 @@
+﻿<Window x:Class="Yais.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Yais"
+        xmlns:view="clr-namespace:Yais.ViewModel"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="407" Width="525"
+        DataContext="{Binding Main, Source={StaticResource Locator}}">
+    <Grid>
+        <Button x:Name="button" Content="Search" Command="{Binding SearchCommand}" HorizontalAlignment="Left" Margin="432,10,0,0" VerticalAlignment="Top" Width="75"/>
+        <TextBox x:Name="textBox" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" Text="{Binding SearchWords}" VerticalAlignment="Top" Width="417"/>
+        <DataGrid x:Name="dataGrid" HorizontalAlignment="Left" Height="334" Margin="10,33,0,0" VerticalAlignment="Top" Width="497" ItemsSource="{Binding FoundItems}" AutoGenerateColumns="True">
+        </DataGrid>
+
+    </Grid>
+</Window>
