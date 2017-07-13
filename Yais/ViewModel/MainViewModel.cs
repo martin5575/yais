@@ -2,8 +2,10 @@ using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.CommandWpf;
 using System.Windows.Input;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using Yais.Model;
 
@@ -53,25 +55,48 @@ namespace Yais.ViewModel
             return !_isSearching;
         }
 
+        private readonly BlockingCollection<SearchJob> _queue = new BlockingCollection<SearchJob>();
+        private readonly Model.Search _search = new Search();
+        private const string FoundItemsName = nameof(FoundItems);
+
         private async void SearchAsync()
         {
             _isSearching = true;
             RaisePropertyChanged(nameof(SearchCommand));
             FoundItems.Clear();
 
-            var search = new Model.Search();
-            var job = search.CreateSearchJob(_searchWords, 3);
+            var job = _search.CreateSearchJob(_searchWords, 3);
+            _queue.Add(job);
+            await Task.Factory.StartNew(Consume);
+        }
 
-            var result = await search.SearchAsync(job);
-            result.Items.ForEach(FoundItems.Add);
-            RaisePropertyChanged(nameof(FoundItems));
-            Parallel.ForEach(result.SubJobs, async x =>
+        private void Consume()
+        {
+            using (Task task = Task.Factory.StartNew(async () =>
             {
-                var abc = await search.SearchAsync(x);
-                //abc.Items.ForEach(FoundItems.Add);
-                //RaisePropertyChanged(nameof(FoundItems));
-            });
-            _isSearching = false;
+                try
+                {
+                    while (true)
+                    {
+                        var job = _queue.Take();
+                        var result = await _search.SearchAsync(job);
+
+                        result.Items.ForEach(FoundItems.Add);
+                        RaisePropertyChanged(FoundItemsName);
+
+                        if (result.SubJobs.Any())
+                            result.SubJobs.ForEach(_queue.Add);
+                        else if (!_queue.Any())
+                            _queue.CompleteAdding();
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // An InvalidOperationException means that Take() was called on a completed collection
+                    _isSearching = false;
+                }
+            }))
+                Task.WaitAll(task);
         }
 
         public ObservableCollection<ImpressumItem> FoundItems { get; }

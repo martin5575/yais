@@ -5,6 +5,8 @@ using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Controls;
+using HtmlAgilityPack;
 
 namespace Yais.Model
 {
@@ -42,14 +44,13 @@ namespace Yais.Model
         public async Task<SearchResult> SearchAsync(SearchJob job)
         {
             var uris = new List<Uri>();
-            var items = new List<ImpressumItem>();
 
-            var content = await _client.GetStringAsync(job.Url);
+            var html = await LoadHtmlAsync(job.Url);
 
             if (job.CurrentDepth <= job.MaxDepth)
-                uris = ParseUris(content, job.Url);
+                uris = ParseUris(html, job.Url);
 
-            items = await ParseForImpressumLinkAsync(content, job.Url);
+            var items = await ParseForImpressumLinkAsync(html, job.Url);
 
             return new SearchResult
             {
@@ -64,45 +65,68 @@ namespace Yais.Model
             };
         }
 
-        Regex _regex = new Regex(@"\<a\ href\=""(?<url>[^""]*)"">[^\<]*\<\/a\>");
-        private List<Uri> ParseUris(string content, Uri baseUri)
+        private static async Task<HtmlDocument> LoadHtmlAsync(Uri requestUri)
+        {
+            var content = await _client.GetStringAsync(requestUri);
+            HtmlDocument html = new HtmlDocument();
+            html.LoadHtml(content);
+            return html;
+        }
+
+        //Regex _regex = new Regex(@"\<a\ href\=""(?<url>[^""]*)"">[^\<]*\<\/a\>");
+        private List<Uri> ParseUris(HtmlDocument html, Uri baseUri)
         {
             var result = new List<Uri>();
-            foreach (Match item in _regex.Matches(content))
+            foreach (HtmlNode node in html.DocumentNode.SelectNodes("//a[@href]"))
             {
-                string url = item.Groups["url"].Value;
-                var uri = url.StartsWith("http") ? new Uri(url) : new Uri(baseUri, url);
+                var uri = GetUri(baseUri, node);
                 result.Add(uri);
             }
             return result;
         }
 
-        Regex _regexImpressumLink = new Regex(@"\<a\ href\=""(?<url>[^""]*)"">Impressum\<\/a\>");
-        private async Task<List<ImpressumItem>> ParseForImpressumLinkAsync(string content, Uri baseUri)
+        private static Uri GetUri(Uri baseUri, HtmlNode aHrefNode)
         {
-            string textToParse;
-            if (_regexImpressumLink.IsMatch(content))
-            {
-                string relativeUri = _regexImpressumLink.Match(content).Groups["url"].Value;
-                var uri = new Uri(baseUri, relativeUri);
-                textToParse = await _client.GetStringAsync(uri);
-            }
-            else
-                textToParse = content;
-
-            return ParseImpressum(textToParse);
+            string url = aHrefNode.Attributes["href"].Value;
+            var uri = url.StartsWith("http") ? new Uri(url) : new Uri(baseUri, url);
+            return uri;
         }
 
-        static Regex _regexPhone = new Regex(@"[0-9]{4,10}");
-        private static List<ImpressumItem> ParseImpressum(string text)
+        //Regex _regexImpressumLink = new Regex(@"\<a\ href\=""(?<url>[^""]*)"">Impressum\<\/a\>");
+        private async Task<List<ImpressumItem>> ParseForImpressumLinkAsync(HtmlDocument html, Uri baseUri)
+        {
+            if (baseUri.LocalPath.Contains("Impressum"))
+            {
+                return ParseImpressum(html);
+            }
+
+            var result = new List<ImpressumItem>();
+            var nodes = html.DocumentNode.SelectNodes("//a[@href]").Where(x => x.InnerText.Contains("Impressum"));
+            foreach (var node in nodes)
+            {
+                var uri = GetUri(baseUri, node);
+                var subHtml = await LoadHtmlAsync(uri);
+                result.AddRange(ParseImpressum(subHtml));
+            }
+            return result;
+        }
+
+        static readonly Regex _regexPhone = new Regex(@"[0-9]{4,10}");
+        private static List<ImpressumItem> ParseImpressum(HtmlDocument html)
         {
             var data = new List<ImpressumItem>();
-            foreach (Match item in _regexPhone.Matches(text))
+
+            var spans = html.DocumentNode.SelectNodes("//span");
+
+            foreach (var span in spans)
             {
-                data.Add(new ImpressumItem
+                foreach (Match item in _regexPhone.Matches(span.InnerText))
                 {
-                    TelephoneNumber = item.Value
-                });
+                    data.Add(new ImpressumItem
+                    {
+                        TelephoneNumber = item.Value
+                    });
+                }
             }
             return data;
         }
