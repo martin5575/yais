@@ -11,26 +11,11 @@ using NLog;
 
 namespace Yais.Model
 {
-    public class Search
+    public class SearchEngine
     {
-        static readonly Logger Logger = LogManager.GetLogger(nameof(Search));
+        static readonly Logger Logger = LogManager.GetLogger(nameof(SearchEngine));
 
         static HttpClient _client = new HttpClient();
-
-        //public async Task<IEnumerable<SearchJob>> StartAsync(string searchWords, int depth)
-        //{
-        //    var job = GetSearchJob(searchWords, depth);
-        //    var searchResult = await SearchAsync(job);
-
-        //    var subJobs = searchResult.SubUris.Select(x => new SearchJob
-        //    {
-        //        Url = x,
-        //        MaxDepth = job.MaxDepth,
-        //        CurrentDepth = job.CurrentDepth++
-        //    });
-
-        //    return;
-        //}
 
         public SearchJob CreateSearchJob(string searchWords, int depth)
         {

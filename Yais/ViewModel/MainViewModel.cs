@@ -78,7 +78,7 @@ namespace Yais.ViewModel
         }
 
         private readonly BlockingCollection<SearchJob> _queue = new BlockingCollection<SearchJob>();
-        private readonly Model.Search _search = new Search();
+        private readonly Model.SearchEngine _search = new SearchEngine();
         private const string FoundItemsName = nameof(FoundItems);
 
         private async void SearchAsync()

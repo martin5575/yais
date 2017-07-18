@@ -83,9 +83,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Model\Search.cs" />
-    <Compile Include="Model\SearchJob.cs" />
-    <Compile Include="Model\SearchResult.cs" />
+    <Compile Include="Model\Search\Search.cs" />
+    <Compile Include="Model\Search\SearchJob.cs" />
+    <Compile Include="Model\Search\SearchResult.cs" />
     <Compile Include="Model\ImpressumItem.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
