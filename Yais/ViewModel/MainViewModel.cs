@@ -31,17 +31,39 @@ namespace Yais.ViewModel
         public MainViewModel()
         {
             _searchWords = "Lohnunternehmer";
+            _depth = 4;
             FoundItems = new ObservableCollection<ImpressumItem>();
         }
 
         private string _searchWords;
-
         public string SearchWords
         {
             get { return _searchWords; }
             set
             {
                 _searchWords = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private int _depth;
+        public int Depth
+        {
+            get { return _depth; }
+            set
+            {
+                _depth = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private int _queueLength;
+        public int QueueLength
+        {
+            get { return _queueLength; }
+            set
+            {
+                _queueLength = value;
                 RaisePropertyChanged();
             }
         }
@@ -65,7 +87,7 @@ namespace Yais.ViewModel
             RaisePropertyChanged(nameof(SearchCommand));
             FoundItems.Clear();
 
-            var job = _search.CreateSearchJob(_searchWords, 3);
+            var job = _search.CreateSearchJob(_searchWords, _depth);
             _queue.Add(job);
             await Task.Factory.StartNew(Consume);
         }
@@ -79,15 +101,17 @@ namespace Yais.ViewModel
                     while (true)
                     {
                         var job = _queue.Take();
+                        QueueLength = _queue.Count;
                         var result = await _search.SearchAsync(job);
 
                         result.Items.ForEach(FoundItems.Add);
-                        RaisePropertyChanged(FoundItemsName);
+                        //RaisePropertyChanged(FoundItemsName);
 
                         if (result.SubJobs.Any())
                             result.SubJobs.ForEach(_queue.Add);
                         else if (!_queue.Any())
                             _queue.CompleteAdding();
+                        QueueLength = _queue.Count;
                     }
                 }
                 catch (InvalidOperationException)
@@ -96,7 +120,7 @@ namespace Yais.ViewModel
                     _isSearching = false;
                 }
             }))
-                Task.WaitAll(task);
+                Task.WaitAny(task);
         }
 
         public ObservableCollection<ImpressumItem> FoundItems { get; }

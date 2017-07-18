@@ -7,11 +7,14 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using HtmlAgilityPack;
+using NLog;
 
 namespace Yais.Model
 {
     public class Search
     {
+        static readonly Logger Logger = LogManager.GetLogger(nameof(Search));
+
         static HttpClient _client = new HttpClient();
 
         //public async Task<IEnumerable<SearchJob>> StartAsync(string searchWords, int depth)
@@ -64,12 +67,19 @@ namespace Yais.Model
                 Items = items
             };
         }
+        
 
         private static async Task<HtmlDocument> LoadHtmlAsync(Uri requestUri)
         {
+            Logger.Debug($"START GET {requestUri.OriginalString}");
             var content = await _client.GetStringAsync(requestUri);
+            Logger.Debug($"DONE GET {requestUri.OriginalString}");
+
+            Logger.Debug($"START PARSE HTML {requestUri.OriginalString}");
             HtmlDocument html = new HtmlDocument();
             html.LoadHtml(content);
+            Logger.Debug($"DONE PARSE HTML {requestUri.OriginalString}");
+
             return html;
         }
 

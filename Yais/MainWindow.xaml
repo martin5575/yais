@@ -10,8 +10,10 @@
         DataContext="{Binding Main, Source={StaticResource Locator}}">
     <Grid>
         <Button x:Name="button" Content="Search" Command="{Binding SearchCommand}" Margin="0,10,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="75"/>
-        <TextBox x:Name="textBox" Height="23" Margin="10,10,90,0" TextWrapping="Wrap" Text="{Binding SearchWords}" VerticalAlignment="Top"/>
-        <DataGrid x:Name="dataGrid" Margin="10,38,10,10" ItemsSource="{Binding FoundItems}" AutoGenerateColumns="True"/>
+        <TextBox x:Name="textBoxSearchWords" Height="23" Margin="10,10,138,0" TextWrapping="Wrap" Text="{Binding SearchWords}" VerticalAlignment="Top"/>
+        <DataGrid x:Name="dataGrid" Margin="10,38,10,33" ItemsSource="{Binding FoundItems}" AutoGenerateColumns="True"/>
+        <TextBox x:Name="textBoxDepth" Height="23" Margin="0,10,90,0" TextWrapping="Wrap" Text="{Binding Depth,Mode=TwoWay}" VerticalAlignment="Top" HorizontalAlignment="Right" Width="43"/>
+        <TextBox x:Name="textBoxQueueLength" Margin="10,0,10,5" TextWrapping="Wrap" Text="{Binding QueueLength}" Height="23" VerticalAlignment="Bottom"/>
 
     </Grid>
 </Window>
