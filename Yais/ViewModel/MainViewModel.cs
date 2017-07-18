@@ -8,6 +8,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Yais.Model;
+using System.Collections.Generic;
+using System.Windows;
 
 namespace Yais.ViewModel
 {
@@ -94,33 +96,56 @@ namespace Yais.ViewModel
 
         private void Consume()
         {
-            using (Task task = Task.Factory.StartNew(async () =>
+            var tasks = new Task[3];
+            for (int i = 0; i < 3; i++)
             {
-                try
+                tasks[i] = Task.Run(async () =>
                 {
-                    while (true)
-                    {
-                        var job = _queue.Take();
-                        QueueLength = _queue.Count;
-                        var result = await _search.SearchAsync(job);
+                    await ConsumeAsync();
+                });
+            }
+            try
+            {
+                Task.WaitAll(tasks);
+            }
+            finally
+            {
+                foreach (var task in tasks)
+                    task.Dispose();
+            }
+            _isSearching = false;
+        }
 
-                        result.Items.ForEach(FoundItems.Add);
-                        //RaisePropertyChanged(FoundItemsName);
-
-                        if (result.SubJobs.Any())
-                            result.SubJobs.ForEach(_queue.Add);
-                        else if (!_queue.Any())
-                            _queue.CompleteAdding();
-                        QueueLength = _queue.Count;
-                    }
-                }
-                catch (InvalidOperationException)
+        private async Task ConsumeAsync()
+        {
+            try
+            {
+                while (true)
                 {
-                    // An InvalidOperationException means that Take() was called on a completed collection
-                    _isSearching = false;
+                    var job = _queue.Take();
+                    QueueLength = _queue.Count;
+                    var result = await _search.SearchAsync(job);
+
+                    result.Items.ForEach(x => AddOnUI(FoundItems, x));
+                    //RaisePropertyChanged(FoundItemsName);
+
+                    if (result.SubJobs.Any())
+                        result.SubJobs.ForEach(_queue.Add);
+                    else if (!_queue.Any())
+                        _queue.CompleteAdding();
+                    QueueLength = _queue.Count;
                 }
-            }))
-                Task.WaitAny(task);
+            }
+            catch (InvalidOperationException)
+            {
+                // An InvalidOperationException means that Take() was called on a completed collection
+            }
+        }
+
+        public static void AddOnUI<T>(ICollection<T> collection, T item)
+        {
+            Action<T> addMethod = collection.Add;
+            Application.Current.Dispatcher.BeginInvoke(addMethod, item);
         }
 
         public ObservableCollection<ImpressumItem> FoundItems { get; }

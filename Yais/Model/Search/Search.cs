@@ -72,11 +72,16 @@ namespace Yais.Model
         private List<Uri> ParseUris(HtmlDocument html, Uri baseUri)
         {
             var result = new List<Uri>();
-            foreach (HtmlNode node in html.DocumentNode.SelectNodes("//a[@href]"))
+            try
             {
-                var uri = GetUri(baseUri, node);
-                result.Add(uri);
+                foreach (HtmlNode node in html.DocumentNode.SelectNodes("//a[@href]"))
+                {
+                    var uri = GetUri(baseUri, node);
+                    result.Add(uri);
+                }
             }
+            catch(Exception )
+            { }
             return result;
         }
 
@@ -96,26 +101,33 @@ namespace Yais.Model
             }
 
             var result = new List<ImpressumItem>();
-            var nodes = html.DocumentNode.SelectNodes("//a[@href]").Where(x => x.InnerText.Contains("Impressum"));
-            foreach (var node in nodes)
+
+            try
             {
-                var uri = GetUri(baseUri, node);
-                var subHtml = await LoadHtmlAsync(uri);
-                result.AddRange(ParseImpressum(subHtml));
+                var nodes = html.DocumentNode.SelectNodes("//a[@href]").Where(x => x.InnerText.Contains("Impressum"));
+
+                foreach (var node in nodes)
+                {
+                    var uri = GetUri(baseUri, node);
+                    var subHtml = await LoadHtmlAsync(uri);
+                    result.AddRange(ParseImpressum(subHtml));
+                }
             }
+            catch(Exception)
+            { }
             return result;
         }
 
-        static readonly Regex _regexPhone = new Regex(@"[0-9]{4,10}");
+        static readonly Regex _regexPhone = new Regex(@"[0-9 +()]{4,20}");
         private static List<ImpressumItem> ParseImpressum(HtmlDocument html)
         {
             var data = new List<ImpressumItem>();
 
-            var spans = html.DocumentNode.SelectNodes("//span");
+            var lines = GetTextLines(html.DocumentNode);
 
-            foreach (var span in spans)
+            foreach (var line in lines)
             {
-                foreach (Match item in _regexPhone.Matches(span.InnerText))
+                foreach (Match item in _regexPhone.Matches(line))
                 {
                     data.Add(new ImpressumItem
                     {
@@ -124,6 +136,18 @@ namespace Yais.Model
                 }
             }
             return data;
+        }
+
+        private static IEnumerable<string> GetTextLines(HtmlNode node)
+        {
+            foreach(var child in node.ChildNodes)
+            {
+                if (child is HtmlTextNode)
+                    yield return ((HtmlTextNode)child).Text;
+                else
+                    foreach (var subline in GetTextLines(child))
+                        yield return subline;
+            }
         }
     }
 }
