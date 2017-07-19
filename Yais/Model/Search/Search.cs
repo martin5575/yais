@@ -8,14 +8,16 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using HtmlAgilityPack;
 using NLog;
+using System.Threading;
+using Yais.Collections;
 
 namespace Yais.Model
 {
     public class SearchEngine
     {
         static readonly Logger Logger = LogManager.GetLogger(nameof(SearchEngine));
-
         static HttpClient _client = new HttpClient();
+
 
         public SearchJob CreateSearchJob(string searchWords, int depth)
         {
@@ -40,23 +42,25 @@ namespace Yais.Model
 
             var items = await ParseForImpressumLinkAsync(html, job.Url);
 
+            int nextDepth = job.CurrentDepth++;
+            int maxDepth = job.MaxDepth;
             return new SearchResult
             {
                 Job = job,
                 SubJobs = uris.Select(x =>
                 new SearchJob {
                     Url = x,
-                    MaxDepth = job.MaxDepth,
-                    CurrentDepth = job.CurrentDepth++
+                    MaxDepth = maxDepth,
+                    CurrentDepth = nextDepth,
                 }).ToList(),
                 Items = items
             };
         }
-        
 
         private static async Task<HtmlDocument> LoadHtmlAsync(Uri requestUri)
         {
             Logger.Debug($"START GET {requestUri.OriginalString}");
+
             var content = await _client.GetStringAsync(requestUri);
             Logger.Debug($"DONE GET {requestUri.OriginalString}");
 
@@ -77,7 +81,8 @@ namespace Yais.Model
                 foreach (HtmlNode node in html.DocumentNode.SelectNodes("//a[@href]"))
                 {
                     var uri = GetUri(baseUri, node);
-                    result.Add(uri);
+                    if (uri!=null)
+                        result.Add(uri);
                 }
             }
             catch(Exception )
@@ -88,8 +93,15 @@ namespace Yais.Model
         private static Uri GetUri(Uri baseUri, HtmlNode aHrefNode)
         {
             string url = aHrefNode.Attributes["href"].Value;
-            var uri = url.StartsWith("http") ? new Uri(url) : new Uri(baseUri, url);
-            return uri;
+            bool isHttp = url.StartsWith("http");
+
+            if (isHttp && Uri.IsWellFormedUriString(url, UriKind.Absolute))
+                return new Uri(url);
+            if (!isHttp && Uri.IsWellFormedUriString(url, UriKind.Relative))
+                return new Uri(baseUri, url);
+
+            Logger.Debug($"Skipped '{url}'. It is not a valid url.");
+            return null;
         }
 
         //Regex _regexImpressumLink = new Regex(@"\<a\ href\=""(?<url>[^""]*)"">Impressum\<\/a\>");
@@ -97,7 +109,7 @@ namespace Yais.Model
         {
             if (baseUri.LocalPath.Contains("Impressum"))
             {
-                return ParseImpressum(html);
+                return ParseImpressum(html, baseUri.Host);
             }
 
             var result = new List<ImpressumItem>();
@@ -109,8 +121,11 @@ namespace Yais.Model
                 foreach (var node in nodes)
                 {
                     var uri = GetUri(baseUri, node);
+                    if (uri == null)
+                        continue;
+
                     var subHtml = await LoadHtmlAsync(uri);
-                    result.AddRange(ParseImpressum(subHtml));
+                    result.AddRange(ParseImpressum(subHtml, uri.Host));
                 }
             }
             catch(Exception)
@@ -119,7 +134,7 @@ namespace Yais.Model
         }
 
         static readonly Regex _regexPhone = new Regex(@"[0-9 +()]{4,20}");
-        private static List<ImpressumItem> ParseImpressum(HtmlDocument html)
+        private static List<ImpressumItem> ParseImpressum(HtmlDocument html, string host)
         {
             var data = new List<ImpressumItem>();
 
@@ -131,7 +146,8 @@ namespace Yais.Model
                 {
                     data.Add(new ImpressumItem
                     {
-                        TelephoneNumber = item.Value
+                        TelephoneNumber = item.Value,
+                        Host = host,
                     });
                 }
             }

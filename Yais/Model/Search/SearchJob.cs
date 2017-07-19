@@ -11,6 +11,5 @@ namespace Yais.Model
         public int MaxDepth { get; set; }
         public int CurrentDepth { get; set; }
         public Uri Url { get; set; }
-
     }
 }

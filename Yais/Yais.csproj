@@ -83,6 +83,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Collections\PriorityQueue.cs" />
+    <Compile Include="Collections\ReaderWriterLockSlimExt.cs" />
+    <Compile Include="Model\Search\Priorities\Priority.cs" />
     <Compile Include="Model\Search\Search.cs" />
     <Compile Include="Model\Search\SearchJob.cs" />
     <Compile Include="Model\Search\SearchResult.cs" />
@@ -130,6 +133,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

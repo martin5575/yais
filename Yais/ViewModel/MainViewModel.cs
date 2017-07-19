@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Yais.Model;
 using System.Collections.Generic;
 using System.Windows;
+using Yais.Model.Search;
+using Yais.Model.Search.Priorities;
 
 namespace Yais.ViewModel
 {
@@ -79,19 +81,34 @@ namespace Yais.ViewModel
             return !_isSearching;
         }
 
-        private readonly BlockingCollection<SearchJob> _queue = new BlockingCollection<SearchJob>();
+        private readonly PriorityQueue<SearchJob> _queue = new PriorityQueue<SearchJob>();
         private readonly Model.SearchEngine _search = new SearchEngine();
         private const string FoundItemsName = nameof(FoundItems);
+        private Priority _priority;
+        private HashSet<string> _visited;
 
         private async void SearchAsync()
         {
+            _priority = new Priority();
+            _visited = new HashSet<string>();
             _isSearching = true;
             RaisePropertyChanged(nameof(SearchCommand));
             FoundItems.Clear();
 
             var job = _search.CreateSearchJob(_searchWords, _depth);
-            _queue.Add(job);
+            _queue.Enqueue(job, _priority.GetBestPrio());
             await Task.Factory.StartNew(Consume);
+        }
+
+        private const int _Threshold = 300;
+        private void Enqueue(SearchJob job)
+        {
+            var prio = _priority.GetPrio(job);
+            if (!_visited.Contains(job.Url.AbsoluteUri) && prio < _Threshold)
+            {
+                _visited.Add(job.Url.AbsoluteUri);
+                _queue.Enqueue(job, prio);
+            }
         }
 
         private void Consume()
@@ -118,11 +135,22 @@ namespace Yais.ViewModel
 
         private async Task ConsumeAsync()
         {
+            int emptyCount = 0;
             try
             {
                 while (true)
                 {
-                    var job = _queue.Take();
+                    SearchJob job;
+                    if (!_queue.TryDequeue(out job))
+                    {
+                        await Task.Delay(500);
+                        if (++emptyCount>50)
+                            break;
+
+                        continue;
+                    }
+
+                    emptyCount = 0;
                     QueueLength = _queue.Count;
                     var result = await _search.SearchAsync(job);
 
@@ -130,9 +158,7 @@ namespace Yais.ViewModel
                     //RaisePropertyChanged(FoundItemsName);
 
                     if (result.SubJobs.Any())
-                        result.SubJobs.ForEach(_queue.Add);
-                    else if (!_queue.Any())
-                        _queue.CompleteAdding();
+                        result.SubJobs.ForEach(Enqueue);
                     QueueLength = _queue.Count;
                 }
             }
