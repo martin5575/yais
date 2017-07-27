@@ -93,6 +93,7 @@
     <Compile Include="Model\Search\ContentFinder\TaxNumberFinder.cs" />
     <Compile Include="Model\Search\ContentFinder\PhoneNumberFinder.cs" />
     <Compile Include="Model\Search\Priorities\Priority.cs" />
+    <Compile Include="Model\Search\Robots\RobotsHandler.cs" />
     <Compile Include="Model\Search\Search.cs" />
     <Compile Include="Model\Search\SearchJob.cs" />
     <Compile Include="Model\Search\SearchResult.cs" />

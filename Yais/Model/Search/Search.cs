@@ -11,6 +11,7 @@ using NLog;
 using System.Threading;
 using Yais.Collections;
 using Yais.Model.Search.ContentFinder;
+using Yais.Model.Search.Robots;
 
 namespace Yais.Model
 {
@@ -83,6 +84,24 @@ namespace Yais.Model
         }
 
         //Regex _regex = new Regex(@"\<a\ href\=""(?<url>[^""]*)"">[^\<]*\<\/a\>");
+
+        private static Dictionary<string, RobotsHandler> _robotsHandlers = new
+            Dictionary<string, RobotsHandler>();
+        private RobotsHandler GetRobotsHandler(string host)
+        {
+            RobotsHandler result;
+            if (_robotsHandlers.TryGetValue(host, out result))
+                return result;
+
+            var uri = new Uri("http://"+host + "/robots.txt", UriKind.Absolute);
+            var robotsTxt = _client.GetStringAsync(uri).Result;
+            result = new RobotsHandler(robotsTxt);
+            _robotsHandlers.Add(host, result);
+
+            return result;
+        }
+
+
         private List<Uri> ParseUris(HtmlDocument html, Uri baseUri)
         {
             var result = new List<Uri>();
@@ -91,7 +110,11 @@ namespace Yais.Model
                 foreach (HtmlNode node in html.DocumentNode.SelectNodes("//a[@href]"))
                 {
                     var uri = GetUri(baseUri, node);
-                    if (uri!=null)
+                    if (uri == null)
+                        continue;
+
+                    var robotsHandler = GetRobotsHandler(uri.Host);
+                    if (robotsHandler.IsUriAllowed(uri))
                         result.Add(uri);
                 }
             }
