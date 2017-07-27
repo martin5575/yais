@@ -21,7 +21,7 @@ namespace Yais.Model.Search.Priorities
         public int GetPrio(SearchJob job)
         {
             var url = job.Url;
-            if (url.AbsoluteUri.Contains("Impressum"))
+            if (url.AbsoluteUri.ToLowerInvariant().Contains("Impressum"))
                 return 1;
 
             var host = url.Host;

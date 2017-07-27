@@ -10,6 +10,7 @@ using HtmlAgilityPack;
 using NLog;
 using System.Threading;
 using Yais.Collections;
+using Yais.Model.Search.ContentFinder;
 
 namespace Yais.Model
 {
@@ -35,12 +36,21 @@ namespace Yais.Model
         {
             var uris = new List<Uri>();
 
-            var html = await LoadHtmlAsync(job.Url);
+            HtmlDocument html;
+            try
+            {
+                html = await LoadHtmlAsync(job.Url);
+            }
+            catch(Exception exception)
+            {
+                Logger.ErrorException("could not load html", exception);
+                return null;
+            }
 
             if (job.CurrentDepth <= job.MaxDepth)
                 uris = ParseUris(html, job.Url);
 
-            var items = await ParseForImpressumLinkAsync(html, job.Url);
+            var items = ParseForImpressumLink(html, job.Url).ToList();
 
             int nextDepth = job.CurrentDepth++;
             int maxDepth = job.MaxDepth;
@@ -105,53 +115,80 @@ namespace Yais.Model
         }
 
         //Regex _regexImpressumLink = new Regex(@"\<a\ href\=""(?<url>[^""]*)"">Impressum\<\/a\>");
-        private async Task<List<ImpressumItem>> ParseForImpressumLinkAsync(HtmlDocument html, Uri baseUri)
+        private IEnumerable<ImpressumItem> ParseForImpressumLink(HtmlDocument html, Uri baseUri)
         {
-            if (baseUri.LocalPath.Contains("Impressum"))
+            string localPathLower = baseUri.AbsoluteUri.ToLowerInvariant();
+            if (localPathLower.Contains("impressum")|| localPathLower.Contains("kontakt") || localPathLower.Contains("contact")) 
             {
-                return ParseImpressum(html, baseUri.Host);
+                return new ImpressumItem[] { ParseImpressum(html, baseUri.Host) };
             }
 
-            var result = new List<ImpressumItem>();
+            return new ImpressumItem[0];
 
-            try
-            {
-                var nodes = html.DocumentNode.SelectNodes("//a[@href]").Where(x => x.InnerText.Contains("Impressum"));
+            //var result = new List<ImpressumItem>();
 
-                foreach (var node in nodes)
-                {
-                    var uri = GetUri(baseUri, node);
-                    if (uri == null)
-                        continue;
+            //try
+            //{
+            //    var nodes = html.DocumentNode.SelectNodes("//a[@href]").Where(x => x.InnerText.Contains("Impressum"));
 
-                    var subHtml = await LoadHtmlAsync(uri);
-                    result.AddRange(ParseImpressum(subHtml, uri.Host));
-                }
-            }
-            catch(Exception)
-            { }
-            return result;
+            //    foreach (var node in nodes)
+            //    {
+            //        var uri = GetUri(baseUri, node);
+            //        if (uri == null)
+            //            continue;
+
+            //        var subHtml = await LoadHtmlAsync(uri);
+            //        result.AddRange(ParseImpressum(subHtml, uri.Host));
+            //    }
+            //}
+            //catch(Exception)
+            //{ }
+            //return result;
         }
 
-        static readonly Regex _regexPhone = new Regex(@"[0-9 +()]{4,20}");
-        private static List<ImpressumItem> ParseImpressum(HtmlDocument html, string host)
+
+        public static IEnumerable<FoundContent> Parse(HtmlDocument html, IEnumerable<IContentFinder> finders)
         {
-            var data = new List<ImpressumItem>();
-
+            var finderList = finders.ToList();
             var lines = GetTextLines(html.DocumentNode);
-
             foreach (var line in lines)
             {
-                foreach (Match item in _regexPhone.Matches(line))
-                {
-                    data.Add(new ImpressumItem
-                    {
-                        TelephoneNumber = item.Value,
-                        Host = host,
-                    });
-                }
+                string normalizedText = Normalize(line);
+                if (string.IsNullOrWhiteSpace(normalizedText))
+                    continue;
+
+                FoundContent foundContent;
+                foreach (var finder in finders)
+                    if (finder.TryFind(normalizedText, out foundContent))
+                        yield return foundContent;
             }
-            return data;
+        }
+
+        private static List<IContentFinder> finders = new List<IContentFinder>
+        {
+            new PhoneNumberFinder(),
+            new NameFinder(),
+            new TaxNumberFinder(),
+        };
+
+        private static ImpressumItem ParseImpressum(HtmlDocument html, string host)
+        {
+            var foundContentItems = Parse(html, finders).ToLookup(x=>x.Type);
+            return new ImpressumItem
+            {
+                Name = foundContentItems[FoundContentType.Name].First().Content,
+                TelephoneNumber = foundContentItems[FoundContentType.PhoneNumber].First().Content,
+                TaxIdentifier = foundContentItems[FoundContentType.TaxIdentifiactionNumber].First().Content
+            };
+        }
+
+        private static string Normalize(string line)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var c in line)
+                if (!char.IsWhiteSpace(c))
+                    sb.Append(c);
+            return sb.ToString();
         }
 
         private static IEnumerable<string> GetTextLines(HtmlNode node)

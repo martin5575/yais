@@ -85,6 +85,13 @@
     </ApplicationDefinition>
     <Compile Include="Collections\PriorityQueue.cs" />
     <Compile Include="Collections\ReaderWriterLockSlimExt.cs" />
+    <Compile Include="Data\ResourceReader.cs" />
+    <Compile Include="Model\Search\ContentFinder\FoundContent.cs" />
+    <Compile Include="Model\Search\ContentFinder\FoundContentType.cs" />
+    <Compile Include="Model\Search\ContentFinder\IContentFinder.cs" />
+    <Compile Include="Model\Search\ContentFinder\NameFinder.cs" />
+    <Compile Include="Model\Search\ContentFinder\TaxNumberFinder.cs" />
+    <Compile Include="Model\Search\ContentFinder\PhoneNumberFinder.cs" />
     <Compile Include="Model\Search\Priorities\Priority.cs" />
     <Compile Include="Model\Search\Search.cs" />
     <Compile Include="Model\Search\SearchJob.cs" />
@@ -133,7 +140,9 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Data\GivenNames.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

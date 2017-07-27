@@ -100,7 +100,7 @@ namespace Yais.ViewModel
             await Task.Factory.StartNew(Consume);
         }
 
-        private const int _Threshold = 300;
+        private const int _Threshold = 10000;
         private void Enqueue(SearchJob job)
         {
             var prio = _priority.GetPrio(job);
@@ -113,8 +113,9 @@ namespace Yais.ViewModel
 
         private void Consume()
         {
-            var tasks = new Task[3];
-            for (int i = 0; i < 3; i++)
+            int count = 1;
+            var tasks = new Task[count];
+            for (int i = 0; i < tasks.Length; i++)
             {
                 tasks[i] = Task.Run(async () =>
                 {
@@ -153,6 +154,8 @@ namespace Yais.ViewModel
                     emptyCount = 0;
                     QueueLength = _queue.Count;
                     var result = await _search.SearchAsync(job);
+                    if (result == null)
+                        continue;
 
                     result.Items.ForEach(x => AddOnUI(FoundItems, x));
                     //RaisePropertyChanged(FoundItemsName);
