@@ -28,13 +28,31 @@ namespace Yias.UnitTest
         [TestMethod]
         public void AllowedSubPathTest()
         {
-            Assert.IsFalse(_handler.IsUriAllowed("/search/about"));
+            Assert.IsTrue(_handler.IsUriAllowed("/search/about"));
         }
 
         [TestMethod]
         public void WrongRobotTest()
         {
             Assert.IsFalse(_handler.IsUriAllowed("/imgres"));
+        }
+
+        [TestMethod]
+        public void AllowedParameterTest()
+        {
+            Assert.IsTrue(_handler.IsUriAllowed("/?hl=abc"));
+        }
+
+        [TestMethod]
+        public void DisallowedParameterTest()
+        {
+            Assert.IsTrue(_handler.IsUriAllowed("/?hl=abc&gws=def"));
+        }
+
+        [TestMethod]
+        public void AllowedParameterComplexTest()
+        {
+            Assert.IsTrue(_handler.IsUriAllowed("/?hl=abcd&gws_rd=ssl$"));
         }
 
 
