@@ -13,6 +13,8 @@ namespace Yais.Model.Search.Priorities
         HashSet<string> _visitedHosts = new HashSet<string>();
         ReaderWriterLockSlim _readerWriterLock = new ReaderWriterLockSlim();
 
+
+
         public int GetBestPrio()
         {
             return 1;
@@ -20,13 +22,19 @@ namespace Yais.Model.Search.Priorities
 
         public int GetPrio(SearchJob job)
         {
-            var url = job.Url;
-            if (url.AbsoluteUri.ToLowerInvariant().Contains("Impressum"))
-                return 1;
+            if (LinkChecker.ImpressumChecker.IsRelevant(job.Link))
+                return 1; // top prio
+
+            var url = job.Link.Uri;
 
             var host = url.Host;
             var depth = job.CurrentDepth;
             var maxDepth = job.MaxDepth;
+            var isDeDomain = host.EndsWith(".de");
+
+            if (!isDeDomain)
+                return 500000;
+
 
             double factor = (maxDepth + 1.0) / (depth + 1.0);
             return _readerWriterLock.ExecuteInUpgradeableReaderLock(() =>

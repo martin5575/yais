@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Yais.Model.Search;
 
 namespace Yais.Model
 {
@@ -10,6 +11,6 @@ namespace Yais.Model
     {
         public int MaxDepth { get; set; }
         public int CurrentDepth { get; set; }
-        public Uri Url { get; set; }
+        public Link Link { get; set; }
     }
 }

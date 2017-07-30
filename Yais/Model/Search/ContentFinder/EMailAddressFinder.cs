@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 
 namespace Yais.Model.Search.ContentFinder
 {
-    public class TaxNumberFinder : IContentFinder
+    public class EMailAddressFinder : IContentFinder
     {
-        static readonly Regex _regexPhone = new Regex(@"DE( )*[0-9]{9}");
+        static readonly Regex _regex = new Regex(@"([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)");
 
-        public FoundContentType Type { get { return FoundContentType.TaxIdentifiactionNumber; } }
+        public FoundContentType Type { get { return FoundContentType.EMailAdress; } }
 
         public bool TryFind(string line, out FoundContent foundContent)
         {
-            var match = _regexPhone.Match(line);
+            var match = _regex.Match(line);
             if (!match.Success)
             {
                 foundContent = null;
@@ -25,7 +25,7 @@ namespace Yais.Model.Search.ContentFinder
             foundContent = new FoundContent
             {
                 Content = match.Value,
-                Type = FoundContentType.TaxIdentifiactionNumber
+                Type = FoundContentType.EMailAdress
             };
             return true;
         }

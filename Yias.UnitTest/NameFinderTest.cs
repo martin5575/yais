@@ -88,5 +88,15 @@ namespace Yias.UnitTest
             Assert.IsFalse(_target.TryFind("Dieser Test stinkt gewaltig", out found));
         }
 
+        [TestMethod]
+        public void TestWithinText()
+        {
+            FoundContent found;
+            Assert.IsTrue(_target.TryFind("Geschäftsführer: Dr.Thomas Baumann, Ingo Müller", out found));
+            Assert.AreEqual("Thomas Baumann", found.Content);
+            Assert.AreEqual(FoundContentType.Name, found.Type);
+        }
+
+
     }
 }

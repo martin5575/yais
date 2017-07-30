@@ -12,6 +12,7 @@ using System.Threading;
 using Yais.Collections;
 using Yais.Model.Search.ContentFinder;
 using Yais.Model.Search.Robots;
+using Yais.Model.Search;
 
 namespace Yais.Model
 {
@@ -20,47 +21,47 @@ namespace Yais.Model
         static readonly Logger Logger = LogManager.GetLogger(nameof(SearchEngine));
         static HttpClient _client = new HttpClient();
 
-
         public SearchJob CreateSearchJob(string searchWords, int depth)
         {
             var url = new Uri($"https://www.google.de/search?q={searchWords}");
+
             return new SearchJob
             {
                 CurrentDepth = 0,
                 MaxDepth = depth,
-                Url = url,
+                Link = new Link { Uri = url, Name = "Starting Point" }
             };
         }
 
 
         public async Task<SearchResult> SearchAsync(SearchJob job)
         {
-            var uris = new List<Uri>();
+            var links = new List<Link>();
 
             HtmlDocument html;
             try
             {
-                html = await LoadHtmlAsync(job.Url);
+                html = await LoadHtmlAsync(job.Link.Uri);
             }
             catch(Exception exception)
             {
-                Logger.ErrorException("could not load html", exception);
+                Logger.Error(exception, "could not load html");
                 return null;
             }
 
             if (job.CurrentDepth <= job.MaxDepth)
-                uris = ParseUris(html, job.Url);
+                links = ParseUris(html, job.Link.Uri);
 
-            var items = ParseForImpressumLink(html, job.Url).ToList();
+            var items = ParseForImpressumLink(html, job.Link).ToList();
 
             int nextDepth = job.CurrentDepth++;
             int maxDepth = job.MaxDepth;
             return new SearchResult
             {
                 Job = job,
-                SubJobs = uris.Select(x =>
+                SubJobs = links.Select(x =>
                 new SearchJob {
-                    Url = x,
+                    Link = x,
                     MaxDepth = maxDepth,
                     CurrentDepth = nextDepth,
                 }).ToList(),
@@ -102,9 +103,9 @@ namespace Yais.Model
         }
 
 
-        private List<Uri> ParseUris(HtmlDocument html, Uri baseUri)
+        private List<Link> ParseUris(HtmlDocument html, Uri baseUri)
         {
-            var result = new List<Uri>();
+            var result = new List<Link>();
             try
             {
                 foreach (HtmlNode node in html.DocumentNode.SelectNodes("//a[@href]"))
@@ -115,7 +116,7 @@ namespace Yais.Model
 
                     var robotsHandler = GetRobotsHandler(uri.Host);
                     if (robotsHandler.IsUriAllowed(uri))
-                        result.Add(uri);
+                        result.Add(new Link { Uri = uri, Name = node.InnerText });
                 }
             }
             catch(Exception )
@@ -137,13 +138,13 @@ namespace Yais.Model
             return null;
         }
 
+
         //Regex _regexImpressumLink = new Regex(@"\<a\ href\=""(?<url>[^""]*)"">Impressum\<\/a\>");
-        private IEnumerable<ImpressumItem> ParseForImpressumLink(HtmlDocument html, Uri baseUri)
+        private IEnumerable<ImpressumItem> ParseForImpressumLink(HtmlDocument html, Link link)
         {
-            string localPathLower = baseUri.AbsoluteUri.ToLowerInvariant();
-            if (localPathLower.Contains("impressum")|| localPathLower.Contains("kontakt") || localPathLower.Contains("contact")) 
+            if (LinkChecker.ImpressumChecker.IsRelevant(link))
             {
-                return new ImpressumItem[] { ParseImpressum(html, baseUri.Host) };
+                return new ImpressumItem[] { ParseImpressum(html, link) };
             }
 
             return new ImpressumItem[0];
@@ -192,25 +193,63 @@ namespace Yais.Model
             new PhoneNumberFinder(),
             new NameFinder(),
             new TaxNumberFinder(),
+            new EMailAddressFinder()
         };
 
-        private static ImpressumItem ParseImpressum(HtmlDocument html, string host)
+        private static ImpressumItem ParseImpressum(HtmlDocument html, Link link)
         {
-            var foundContentItems = Parse(html, finders).ToLookup(x=>x.Type);
+            var foundContentItems = Parse(html, finders).ToLookup(x => x.Type);
+            string host = link.Uri.Host;
+
             return new ImpressumItem
             {
-                Name = foundContentItems[FoundContentType.Name].First().Content,
-                TelephoneNumber = foundContentItems[FoundContentType.PhoneNumber].First().Content,
-                TaxIdentifier = foundContentItems[FoundContentType.TaxIdentifiactionNumber].First().Content
+                Name = BestName(foundContentItems[FoundContentType.Name]),
+                TelephoneNumber = BestPhone(foundContentItems[FoundContentType.PhoneNumber]),
+                TaxIdentifier = BestTaxId(foundContentItems[FoundContentType.TaxIdentifiactionNumber]),
+                EMailAddress = BestEMail(foundContentItems[FoundContentType.EMailAdress]),
+                //Street = BestEMail(foundContentItems[FoundContentType.S]),
+                Host = host,
             };
         }
+
+        private static string BestEMail(IEnumerable<FoundContent> names)
+        {
+            return names.FirstOrDefault()?.Content;
+        }
+
+        private static string BestName(IEnumerable<FoundContent> names)
+        {
+            return names.FirstOrDefault()?.Content;
+        }
+
+        private static string BestPhone(IEnumerable<FoundContent> phones)
+        {
+            return phones.FirstOrDefault()?.Content;
+        }
+
+        private static string BestTaxId(IEnumerable<FoundContent> taxIds)
+        {
+            return taxIds.FirstOrDefault()?.Content;
+        }
+
 
         private static string Normalize(string line)
         {
             StringBuilder sb = new StringBuilder();
+            bool wasWhitespace = false;
             foreach (var c in line)
+            {
                 if (!char.IsWhiteSpace(c))
+                {
                     sb.Append(c);
+                    wasWhitespace = false;
+                }
+                else if (!wasWhitespace)
+                {
+                    sb.Append(c);
+                    wasWhitespace = true;
+                }
+            }
             return sb.ToString();
         }
 
@@ -218,6 +257,12 @@ namespace Yais.Model
         {
             foreach(var child in node.ChildNodes)
             {
+                if (child is HtmlCommentNode)
+                    continue;
+
+                if (child.Name == "link" || child.Name=="script")
+                    continue;
+
                 if (child is HtmlTextNode)
                     yield return ((HtmlTextNode)child).Text;
                 else

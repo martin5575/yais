@@ -104,9 +104,10 @@ namespace Yais.ViewModel
         private void Enqueue(SearchJob job)
         {
             var prio = _priority.GetPrio(job);
-            if (!_visited.Contains(job.Url.AbsoluteUri) && prio < _Threshold)
+            var absoluteUri = job.Link.Uri.AbsoluteUri;
+            if (!_visited.Contains(absoluteUri) && prio < _Threshold)
             {
-                _visited.Add(job.Url.AbsoluteUri);
+                _visited.Add(absoluteUri);
                 _queue.Enqueue(job, prio);
             }
         }
