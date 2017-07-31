@@ -11,6 +11,7 @@ namespace Yais.Model.Search.ContentFinder
         PhoneNumber,
         Name,
         TaxIdentifiactionNumber,
-        EMailAdress
+        EMailAdress,
+        ZipCode
     }
 }

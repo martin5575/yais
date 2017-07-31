@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace Yais.Model.Search.ContentFinder
 {
-    public class TaxNumberFinder : IContentFinder
+    public class ZipCodeFinder : IContentFinder
     {
-        static readonly Regex _regex = new Regex(@"DE( )*[0-9]{9}");
+        static readonly Regex _regex = new Regex(@"(D\-)?(?<PLZ>[0-9]{5})( )+[A-ZÄÖÜ][a-zäöüß]+");
 
-        public FoundContentType Type { get { return FoundContentType.TaxIdentifiactionNumber; } }
+        public FoundContentType Type { get { return FoundContentType.ZipCode; } }
 
         public bool TryFind(string line, out FoundContent foundContent)
         {
@@ -24,8 +24,8 @@ namespace Yais.Model.Search.ContentFinder
 
             foundContent = new FoundContent
             {
-                Content = match.Value,
-                Type = FoundContentType.TaxIdentifiactionNumber
+                Content = match.Groups["PLZ"].Value,
+                Type = FoundContentType.ZipCode
             };
             return true;
         }

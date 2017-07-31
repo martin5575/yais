@@ -54,6 +54,7 @@
     <Compile Include="NameFinderTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RobotsTxtTest.cs" />
+    <Compile Include="ZipFinderTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Yais\Yais.csproj">
