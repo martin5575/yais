@@ -16,6 +16,7 @@ namespace Yias.UnitTest
             const string number = "069112233";
             Assert.IsTrue(_target.TryFind(number, out found));
             Assert.AreEqual(number, found.Content);
+            Assert.AreEqual(FoundContentType.PhoneNumber, found.Type);
         }
 
         [TestMethod]

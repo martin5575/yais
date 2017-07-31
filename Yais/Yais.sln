@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yais", "Yais.csproj", "{19A2CCB7-E301-4DBA-9163-580A6BD73243}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yias.UnitTest", "..\Yias.UnitTest\Yias.UnitTest.csproj", "{26A60DD2-0083-49C0-A889-3EA98891389F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yais.UnitTest", "..\Yais.UnitTest\Yais.UnitTest.csproj", "{26A60DD2-0083-49C0-A889-3EA98891389F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

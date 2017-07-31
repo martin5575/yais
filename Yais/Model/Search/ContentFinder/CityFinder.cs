@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 
 namespace Yais.Model.Search.ContentFinder
 {
-    public class PhoneNumberFinder : IContentFinder
+    public class CityFinder : IContentFinder
     {
-        static readonly Regex _regexPhone = new Regex(@"[\(+0]{1}[0-9 \-\(\)]{8,20}");
+        static readonly Regex _regex = new Regex(@"(D\-)?([0-9]{5})( )+(?<City>[A-ZÄÖÜ][a-zäöüß\/]+(( |\-)?[a-zäüöA-ZÄÖÜ][a-zäöüß\.]+){0,3})");
 
-        public FoundContentType Type { get { return FoundContentType.PhoneNumber; } }
+        public FoundContentType Type { get { return FoundContentType.City; } }
 
         public bool TryFind(string line, out FoundContent foundContent)
         {
-            var match = _regexPhone.Match(line);
+            var match = _regex.Match(line);
             if (!match.Success)
             {
                 foundContent = null;
@@ -24,8 +24,8 @@ namespace Yais.Model.Search.ContentFinder
 
             foundContent = new FoundContent
             {
-                Content = match.Value,
-                Type = FoundContentType.PhoneNumber
+                Content = match.Groups["City"].Value,
+                Type = FoundContentType.City
             };
             return true;
         }

@@ -9,16 +9,17 @@ using Yais.Model.Search.ContentFinder;
 namespace Yias.UnitTest
 {
     [TestClass]
-    public class ZipFinderTest
+    public class CityFinderTest
     {
-        private ZipCodeFinder _target = new ZipCodeFinder();
+        private CityFinder _target = new CityFinder();
 
         [TestMethod]
         public void TestSimpleCity()
         {
             FoundContent foundContent;
             Assert.IsTrue(_target.TryFind("64287 Darmstadt", out foundContent));
-            Assert.AreEqual("64287", foundContent.Content);
+            Assert.AreEqual("Darmstadt", foundContent.Content);
+            Assert.AreEqual(FoundContentType.City, foundContent.Type);
         }
 
 
@@ -27,7 +28,7 @@ namespace Yias.UnitTest
         {
             FoundContent foundContent;
             Assert.IsTrue(_target.TryFind("63263 Neu-Isenburg", out foundContent));
-            Assert.AreEqual("63263", foundContent.Content);
+            Assert.AreEqual("Neu-Isenburg", foundContent.Content);
         }
 
         [TestMethod]
@@ -35,7 +36,7 @@ namespace Yias.UnitTest
         {
             FoundContent foundContent;
             Assert.IsTrue(_target.TryFind("60311 Frankfurt am Main", out foundContent));
-            Assert.AreEqual("60311", foundContent.Content);
+            Assert.AreEqual("Frankfurt am Main", foundContent.Content);
         }
 
 
@@ -43,30 +44,16 @@ namespace Yias.UnitTest
         public void TestWithLeadingCountryLetterCode()
         {
             FoundContent foundContent;
-            Assert.IsTrue(_target.TryFind("D-60311 Frankfurt am Main", out foundContent));
-            Assert.AreEqual("60311", foundContent.Content);
+            Assert.IsTrue(_target.TryFind("D-60311 Frankfurt a.M.", out foundContent));
+            Assert.AreEqual("Frankfurt a.M.", foundContent.Content);
         }
 
         [TestMethod]
-        public void TestNoMatchOnNumberOnly()
+        public void TestNoMatchOnCityNameOnly()
         {
             FoundContent foundContent;
-            Assert.IsFalse(_target.TryFind("60311", out foundContent));
+            Assert.IsFalse(_target.TryFind("Berlin", out foundContent));
         }
 
-
-        [TestMethod]
-        public void TestNoMatchOnTooShortNumber()
-        {
-            FoundContent foundContent;
-            Assert.IsFalse(_target.TryFind("6078", out foundContent));
-        }
-
-        [TestMethod]
-        public void TestNoMatchOnTooLongNumber()
-        {
-            FoundContent foundContent;
-            Assert.IsFalse(_target.TryFind("123456", out foundContent));
-        }
     }
 }

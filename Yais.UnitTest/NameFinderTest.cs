@@ -15,6 +15,7 @@ namespace Yias.UnitTest
             FoundContent found;
             Assert.IsTrue(_target.TryFind("Michael Meier", out found));
             Assert.AreEqual("Michael Meier", found.Content);
+            Assert.AreEqual(FoundContentType.Name, found.Type);
         }
 
         [TestMethod]
