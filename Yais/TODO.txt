@@ -1,0 +1,10 @@
+﻿Street, Housenumber
+LEI
+Fax
+BestMatch
+Search-API
+
+Open IE to check if result is good
+
+Duplicate Urls?
+Iterate through all DE domains
