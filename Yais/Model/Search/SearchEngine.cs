@@ -208,10 +208,15 @@ namespace Yais.Model
                 TelephoneNumber = BestPhone(foundContentItems[FoundContentType.PhoneNumber]),
                 TaxIdentifier = BestTaxId(foundContentItems[FoundContentType.TaxIdentifiactionNumber]),
                 EMailAddress = BestEMail(foundContentItems[FoundContentType.EMailAdress]),
-                //Street = BestEMail(foundContentItems[FoundContentType.S]),
+                Street = BestStreet(foundContentItems[FoundContentType.Street]),
                 Host = host,
                 Url = url,
             };
+        }
+
+        private static string BestStreet(IEnumerable<FoundContent> names)
+        {
+            return names.FirstOrDefault()?.Content;
         }
 
         private static string BestEMail(IEnumerable<FoundContent> names)

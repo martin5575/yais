@@ -13,6 +13,7 @@ namespace Yais.Model.Search.ContentFinder
         TaxIdentifiactionNumber,
         EMailAdress,
         ZipCode,
-        City
+        City,
+        Street
     }
 }
