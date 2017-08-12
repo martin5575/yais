@@ -29,8 +29,8 @@ namespace Yias.UnitTest
         {
             var finders = new IContentFinder[] { new ZipCodeFinder() };
             var foundContent = SearchEngine.Parse(_html, finders).ToList();
-            Assert.AreEqual(1, foundContent.Count);
-            Assert.AreEqual(FoundContentType.ZipCode, foundContent[0].Type);
+            Assert.AreEqual(7, foundContent.Count);
+            Assert.IsTrue(foundContent.All(x => x.Type == FoundContentType.ZipCode));
         }
 
         [TestMethod]
@@ -38,8 +38,8 @@ namespace Yias.UnitTest
         {
             var finders = new IContentFinder[] { new CityFinder() };
             var foundContent = SearchEngine.Parse(_html, finders).ToList();
-            Assert.AreEqual(1, foundContent.Count);
-            Assert.AreEqual(FoundContentType.City, foundContent[0].Type);
+            Assert.AreEqual(7, foundContent.Count);
+            Assert.IsTrue(foundContent.All(x => x.Type == FoundContentType.City));
         }
 
         [TestMethod]

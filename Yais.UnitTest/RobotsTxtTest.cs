@@ -55,6 +55,18 @@ namespace Yias.UnitTest
             Assert.IsTrue(_handler.IsUriAllowed("/?hl=abcd&gws_rd=ssl$"));
         }
 
+        [TestMethod]
+        public void DisallowBooks()
+        {
+            Assert.IsFalse(_handler.IsUriAllowed("/books/"));
+        }
+
+        [TestMethod]
+        public void AllowBooksAbout()
+        {
+            Assert.IsTrue(_handler.IsUriAllowed("/books/about"));
+        }
+
 
         private const string Sample = @"User-agent: *
 Disallow: /search
