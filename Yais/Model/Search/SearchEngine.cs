@@ -200,6 +200,7 @@ namespace Yais.Model
         {
             var foundContentItems = Parse(html, finders).ToLookup(x => x.Type);
             string host = link.Uri.Host;
+            string url = link.Uri.AbsoluteUri;
 
             return new ImpressumItem
             {
@@ -209,6 +210,7 @@ namespace Yais.Model
                 EMailAddress = BestEMail(foundContentItems[FoundContentType.EMailAdress]),
                 //Street = BestEMail(foundContentItems[FoundContentType.S]),
                 Host = host,
+                Url = url,
             };
         }
 

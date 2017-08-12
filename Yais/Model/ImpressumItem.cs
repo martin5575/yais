@@ -16,5 +16,6 @@ namespace Yais.Model
         public string LegalIdentifier { get; set; }
         public string TaxIdentifier { get; set; }
 
+        public string Url { get; set; }
     }
 }
