@@ -100,13 +100,28 @@ namespace Yais.ViewModel
             await Task.Factory.StartNew(Consume);
         }
 
+        private static object _LockFoundHostNames = new object();
+        private static object _LockVisited = new object();
         private const int _Threshold = 10000;
         private void Enqueue(SearchJob job)
         {
+            var host = job.Link.Uri.Host;
+            lock (_LockFoundHostNames)
+            {
+                if (_foundHostNames.Contains(host))
+                    return;
+            }
+
             var prio = _priority.GetPrio(job);
             var absoluteUri = job.Link.Uri.AbsoluteUri;
-            if (!_visited.Contains(absoluteUri) && prio < _Threshold)
-            {
+            if (prio > _Threshold)
+                return;
+
+            lock(_LockVisited)
+            { 
+                if (_visited.Contains(absoluteUri))
+                    return;
+
                 _visited.Add(absoluteUri);
                 _queue.Enqueue(job, prio);
             }
@@ -135,6 +150,7 @@ namespace Yais.ViewModel
             _isSearching = false;
         }
 
+        private static HashSet<string> _foundHostNames = new HashSet<string>();
         private async Task ConsumeAsync()
         {
             int emptyCount = 0;
@@ -157,6 +173,11 @@ namespace Yais.ViewModel
                     var result = await _search.SearchAsync(job);
                     if (result == null)
                         continue;
+
+                    lock (_LockFoundHostNames)
+                    {
+                        result.Items.ForEach(x => _foundHostNames.Add(x.Host));
+                    }
 
                     result.Items.ForEach(x => AddOnUI(FoundItems, x));
                     //RaisePropertyChanged(FoundItemsName);
