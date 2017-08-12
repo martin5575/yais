@@ -99,7 +99,7 @@
     <Compile Include="Model\Search\LinkChecker.cs" />
     <Compile Include="Model\Search\Priorities\Priority.cs" />
     <Compile Include="Model\Search\Robots\RobotsHandler.cs" />
-    <Compile Include="Model\Search\Search.cs" />
+    <Compile Include="Model\Search\SearchEngine.cs" />
     <Compile Include="Model\Search\SearchJob.cs" />
     <Compile Include="Model\Search\SearchResult.cs" />
     <Compile Include="Model\ImpressumItem.cs" />
